@@ -11,9 +11,9 @@
   weight = 2
 
 [[main]]
-  identifier = "presentation"
-  name = "Pt"
-  url = "presentation"
+  identifier = "posts"
+  name = "Posts"
+  url = "posts"
   weight = 3
 
 [[main]]
@@ -32,20 +32,4 @@
   name = "Photo"
   url = "gallery/photo"
 
-[[main]]
-  identifier = "posts"
-  name = "Posts"
-  url = "posts"
-  weight = 5
 
-[[main]]
-  identifier = "showcase"
-  name = "Showcase"
-  url = "showcase"
-  weight = 6
-
-[[main]]
-  identifier = "publication"
-  name = "Pub"
-  url = "publication"
-  weight = 7

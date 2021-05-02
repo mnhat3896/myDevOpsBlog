@@ -25,9 +25,11 @@ header:
     paddingY: 0
     align: center
     title:
-      - HUGO
+      - Hi, Wellcome to my blog
     subtitle:
-      - The world’s fastest framework for building websites
+      - I'm Nhat Le
+      - This is a personal blog, used as a place to note and share
+      - Everything that releated to Development and Operation
     titleColor: 
     titleShadow: true
     titleFontSize: 44
