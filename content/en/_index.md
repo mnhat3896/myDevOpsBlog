@@ -28,7 +28,7 @@ header:
       - Hi, Wellcome to my blog
     subtitle:
       - I'm Nhat Le
-      - This is a personal blog, used as a place to note and share
+      - This is my personal blog, used as a place to note and share
       - Everything that releated to Development and Operation
     titleColor: 
     titleShadow: true
