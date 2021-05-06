@@ -1,7 +1,7 @@
 ---
-title: How to backup database inside kubernetes
+title: How to backup database run inside Azure Kubernetes Service (Kubernetes)
 date: 2021-05-02T12:00:06+09:00
-description: The article to introduce how to use cronjob to backup database inside kubernetes
+description: The article to introduce how to use cronjob to backup database inside Azure Kubernetes Service (Kubernetes)
 draft: false
 hideToc: false
 enableToc: true
@@ -25,6 +25,15 @@ image: images/post/backup_database_inside_kubernetes/bk-database-icon.png
 
 This article will show you how to backup database inside a cluster (kubernetes). Here i use Azure kubernetes service (a service of Azure cloud). But you can use this article to back up any kind of Kubernetes approach.
 
+### NOTE
+
+I will use acronym.  
+
+* SC is Storage Class
+* PVC is Persistent Volume Claim
+* SA is Azure Storage Account
+* ACR is Azure Container Registry
+
 ## Scenario
 
 * You are using kubernetes, here is Azure Kubernetes Service (AKS)
@@ -33,17 +42,20 @@ This article will show you how to backup database inside a cluster (kubernetes).
 
 ## Idea to back up
 
-1. Create a cronjob run every midnight. reference here: <https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/>
-2. This cronjob will run a script to back up. (you will see these script in file yaml below)
-3. Then mount these data back up to Azure file share (for easy download or mount back to pod for restore)
+#### For [Mongodb]
 
-### NOTE:
+  1. Create a cronjob run every midnight. reference here: <https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/>
+  2. This cronjob will run a script to back up. (you will see these script in file yaml below)
+  3. Then mount these data back up to Azure file share (for easy download or mount back to pod for restore)
 
-I will use acronym.  
+#### For [Elasticsearch]
 
-* SC is Storage Class
-* PVC is Persistent Volume Claim
-* SA is Azure Storage Account
+  1. Custom Dockerfile to register repo for elasticsearch
+  2. Build the image and push to ACR
+  3. Create SC -> Create PVC
+  4. Create a secret have ACR authentication
+  5. Create a cronjob to run every midnight
+  6. Cronjob run a script to back up data to a path inside cronjob, this path will mount to Azure file share
 
 ## [Mongodb]
 
@@ -156,25 +168,15 @@ Example:
 
 * Cronjob will create a job, this job will run a pod to excute your script. You now can get pod and watch logs of that pod. Pod name is something like this: `mongodb-cronjob-1619478000-8j82h`
 
-
-
 ---
-# [Elasticsearch]
 
-## Flow
-1. Custom Dockerfile to register repo for elasticsearch
-2. Build the image and push to ACR
-3. Create SC -> Create PVC
-4. Create a secret have acr authentication
-5. Create a cronjob to run every midnight
-6. Cronjob run a script to back up data to a path inside cronjob, this path will mount to Azure file share
+## [Elasticsearch]
 
-## Step
-
-- Build Dockerfile
+* Build Dockerfile
 
   Command: `docker build -t elasticsearch-oss:v1 -f Dockerfile --build-arg elastic_version=6.7.8 .`
-  ```
+
+  ```Dockerfile
   ARG elastic_version
   FROM docker.elastic.co/elasticsearch/elasticsearch-oss:${elastic_version}
 
@@ -187,18 +189,23 @@ Example:
 
   ENTRYPOINT ["docker-entrypoint.sh"]
   ```
+
   docker-entrypoint
-  ```
+
+  ```docker-entrypoint.sh
     #!/bin/sh
     #register repo for elasticsearch on local
     curl -XPUT http://localhost:9200/_snapshot/snapshot --header "Content-Type: application/json" --data '{"type": "fs", "settings": { "location": "/usr/share/elasticsearch/snapshot", "chunk_size": "32MB", "compress": true } }'
 
   ```
-- If you have already created SC above, then you don't need to create again. Because this approach still uses the same Storage Account but the different folder in Azure file share
-- Create PVC base on Storage Account (sc) to store data to azure file share
+
+* If you have already created SC above, then you don't need to create again. Because this approach still uses the same Storage Account but the different folder in Azure file share
+
+* Create PVC base on Storage Account (sc) to store data to azure file share
 
   Command: `kubectl apply -f pvc.yaml`
-  ```
+
+  ``` yaml
     kind: PersistentVolumeClaim
     apiVersion: v1
     metadata:
@@ -212,21 +219,31 @@ Example:
           storage: 20Gi
       storageClassName: # azurefile-backup-xxxx # NOTE: CHANGE THIS VALUE
   ```
-- Create a secret to let AKS have permission to pull image from your ACR
-  ```
+
+* Create a secret to let AKS have permission to pull image from your ACR
+
+  You need to change these arguments to your ACR authentication or your docker hub account:
+
+  * --docker-server
+  * --docker-username
+  * --docker-password
+  * --docker-email
+
+  ```bash
     kubectl create secret docker-registry regcred --docker-server= --docker-username= --docker-password= --docker-email=
   ```
 
-- After you build your own image, you can push to the azure container registry to store your image. Then create a `elastic-values.yaml` as below
+* After you build your own image, you can push to the azure container registry to store your image or docker hub. Then create a `elastic-values.yaml` as below
 
   Command: `kubectl apply -f elastic-values.yaml`
 
   Take a look at
-  - path.repo
-  - imagePullSecrets
-  - extraVolumeMounts
-  - extraVolumes
-  ```
+  * path.repo ( set repo path which one you have mkdir in Dockerfile )
+  * imagePullSecrets ( if your image is public. then you can skip this property )
+  * extraVolumeMounts ( also mounth the repo path to azure file share )
+  * extraVolumes
+
+  ```yaml
   imageTag: "6.8.7-v2"
   image: "<your_ACR>/<image>"
   # ================
@@ -276,11 +293,11 @@ Example:
         claimName: pvc-azure-fileshare-elasticsearch
   ```
 
-- Create cronjob
+* Create cronjob
 
-  Because the script will be run inside elasticsearch (not the cronjob). So you don't need to mount the path of cronjob to azure file. This have been done in `elastic-values.yaml`
+  Because the script still run inside the cronjob, __*BUT WILL BE EXECUTE*__ inside elasticsearch (not the cronjob). So you don't need to mount the path of cronjob to azure file. This have been done in `elastic-values.yaml`
 
-  ```
+  ```yaml 
   apiVersion: batch/v1beta1
   kind: CronJob
   metadata:
@@ -322,5 +339,19 @@ Example:
             #   - name: mount-to-azure-file
             #     persistentVolumeClaim:
             #       claimName: pvc-azure-fileshare-elasticsearch
-
   ```
+
+## Conclusion
+
+* Pros: With this approach, you are not depend on nay kind of cloud, because it use the native resource run inside AKS.
+* Cons: The tradeoff is difficulty managing the snapshot, the back up data. For example: if you want to delete the old back up data.
+
+With MongoDB, I have created a folder to let back up by day so we can easily delete the folder by day, but with Elasticsearch it is a different story. 
+
+For Elasticsearch, have to use port-forward then use a tool to support to get list, edit, delete such as ElasticSearch Head (extension chrome)
+
+So each solution will have pros and cons, depend on your scenario to apply the solution. 
+
+If you want to easier, use the resource that exists on Azure, let take a look on my post "How to backup database run inside Azure Kubernetes Service with Azure Backup"
+
+__*Thank you for reading my article. If you have any questions or suggestions, please email or chat with me via telegram or linkedin. (You can find my information at the footer or at writers information)*__
