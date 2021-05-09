@@ -1,7 +1,7 @@
 ---
-title: How to backup database run inside Azure Kubernetes Service (Kubernetes)
+title: Backup database run inside Azure Kubernetes Service with Kubernetes cronjob
 date: 2021-05-02T12:00:06+09:00
-description: The article to introduce how to use cronjob to backup database inside Azure Kubernetes Service (Kubernetes)
+description: The article to introduce how to use cronjob to back up database (statefulset) inside Azure Kubernetes Service (Kubernetes)
 draft: false
 hideToc: false
 enableToc: true
@@ -9,21 +9,39 @@ enableTocContent: true
 author: Nhat Le
 authorEmoji: 👽
 tags:
-- kubernetes
+- Kubernetes
 - backup
-- self-idea
 - database
 - cloud
+- Azure Kubernetes Service
+- Azure
 categories:
 - platform
 series:
-- kubernetes
+- Azure Kubernetes Service
+- Kubernetes
 - Azure cloud
-image: images/post/backup_database_inside_kubernetes/bk-database-icon.png
+image: images/post/backup_DB_inside_AKS_with_cronjob/bk-database-icon.png
 ---
 
+{{< alert theme="warning" dir="ltr" >}}
+First, thank you for visiting my blog and read my article, I appreciate it. Secondly, this is also a place to keep my idea, my knowledge. At the same time, I also want to share these understandings, in a way it can help you or you can have another perspective on your problem.
 
-This article will show you how to backup database inside a cluster (kubernetes). Here i use Azure kubernetes service (a service of Azure cloud). But you can use this article to back up any kind of Kubernetes approach.
+Please read and see from many angles that it is suitable for your situation or not.
+If you have any suggestion or you see my mistake in any posts, please help me by contacting me via Telegram, Email or LinkedIn. Thank you :heart:
+{{< /alert >}}
+
+*This article will show you how to back up a database run inside a cluster (Kubernetes) without a dependency on the service of cloud. If you want to have a centralized place to view all your snapshot, maintain without scripting, you can check this post [Backup database run inside Azure Kubernetes Service with Azure Backup vault](https://dev2ops.net/en/posts/backup_db_inside_aks_with_az_backup/)*
+
+Here i use Azure kubernetes service (a service of Azure cloud). But you can use this article to back up any kind of Kubernetes approach. Not depend on service of Azure, so you can use this article on Amazon Elastic Kubernetes Service or Google Kubernetes Engine and so on. I haven't tested on another cloud yet, but i think we can. You can try and tell me if it works :smile:
+
+So why i have to use cronjob? For creating periodic and recurring tasks.
+
+> A CronJob creates Jobs on a repeating schedule.
+>
+>One CronJob object is like one line of a crontab (cron table) file. It runs a job periodically on a given schedule, written in Cron format.
+
+Reference: <https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/>
 
 ### NOTE
 
@@ -38,17 +56,18 @@ I will use acronym.
 
 * You are using kubernetes, here is Azure Kubernetes Service (AKS)
 * Deploy database, such as mongodb, elasticsearch,...
-* In use persistence volume claim (PVC) or not
+* __Containerized applications running on Azure Kubernetes Service (AKS cluster) are using managed disks as persistent storage__
+* You need to back up data but you don't want to depend on service back up of cloud
 
 ## Idea to back up
 
-#### For [Mongodb]
+### For [Mongodb]
 
-  1. Create a cronjob run every midnight. reference here: <https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/>
+  1. Create a cronjob run every midnight.
   2. This cronjob will run a script to back up. (you will see these script in file yaml below)
   3. Then mount these data back up to Azure file share (for easy download or mount back to pod for restore)
 
-#### For [Elasticsearch]
+### For [Elasticsearch]
 
   1. Custom Dockerfile to register repo for elasticsearch
   2. Build the image and push to ACR
@@ -61,7 +80,7 @@ I will use acronym.
 
 * With mongodb you need to create SC, then create PVC base on SC.  
   *So, for what?*.  
-  When you run a cronjob, you create a path inside it, this path used for save data back up. this path also mount to Azure file share. To do this, you create a custom SC base on your Azure Storage Account, then create PVC.
+  When you start a cronjob, you create a path inside it, this path used for save data back up. this path also mount to Azure file share. To do this, you create a custom SC base on your Azure Storage Account name, then create PVC.
 
   Create a file `sc.yaml` and run command: `kubectl apply -f sc.yaml`
 
@@ -343,7 +362,7 @@ Example:
 
 ## Conclusion
 
-* Pros: With this approach, you are not depend on nay kind of cloud, because it use the native resource run inside AKS.
+* Pros: With this approach, you are not depend on service back up of cloud, because it use the native resource run inside AKS.
 * Cons: The tradeoff is difficulty managing the snapshot, the back up data. For example: if you want to delete the old back up data.
 
 With MongoDB, I have created a folder to let back up by day so we can easily delete the folder by day, but with Elasticsearch it is a different story. 
@@ -354,4 +373,4 @@ So each solution will have pros and cons, depend on your scenario to apply the s
 
 If you want to easier, use the resource that exists on Azure, let take a look on my post "How to backup database run inside Azure Kubernetes Service with Azure Backup"
 
-__*Thank you for reading my article. If you have any questions or suggestions, please email or chat with me via telegram or linkedin. (You can find my information at the footer or at writers information)*__
+__*Thank you for reading my article. If you have any questions or suggestions, please Email or chat with me via Telegram or LinkedIn. (You can find my information at the footer or at writers information)*__

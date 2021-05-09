@@ -1,6 +1,6 @@
-logoText = "Dev2DevOps"
+logoText = "Dev2Ops"
 logoType = "short" # long, short
-description = "Dev2DevOps, A personal website for sharing all knowledge about DevOps. Also is my Blog and my Portfolio"
+description = "Dev2Ops, A personal website for sharing all knowledge about DevOps. Also is my Blog and my Portfolio"
 custom_css = []
 custom_js = []
 useFaviconGenerator = true # https://www.favicon-generator.org/
@@ -67,7 +67,7 @@ bioImageUrl = ""
 useGravatar = false
 location = "VietNam"
 organization = ""
-link = "https://dev2devops.net"
+link = "https://dev2ops.net"
 
 # sidebar
 enableBio = true

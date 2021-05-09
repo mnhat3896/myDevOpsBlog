@@ -1,6 +1,6 @@
 +++
 title = "About Me"
-description = "Dev2DevOps, A personal website for sharing all knowledge about DevOps. Also is my Blog and my Portfolio"
+description = "Dev2Ops, A personal website for sharing all knowledge about DevOps. Also is my Blog and my Portfolio"
 type = "about"
 date = "2021-01-05"
 +++
