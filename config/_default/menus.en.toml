@@ -29,7 +29,10 @@
 
 [[main]]
   parent = "gallery"
-  name = "Photo"
-  url = "gallery/photo"
+  name = "Azure Kubernetes Service Diagram"
+  url = "gallery/aks-diagram"
 
-
+[[main]]
+  parent = "gallery"
+  name = "Azure DevOps Pipeline Diagram"
+  url = "gallery/azuredevops-pipeline"

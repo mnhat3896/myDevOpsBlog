@@ -1,6 +1,6 @@
 ---
 title: Backup database run inside Azure Kubernetes Service with Kubernetes cronjob
-date: 2021-04-15T12:00:06+09:00
+date: 2021-05-09T12:00:06+09:00
 description: The article to introduce how to use cronjob to back up database (statefulset) inside Azure Kubernetes Service (Kubernetes)
 draft: false
 hideToc: false

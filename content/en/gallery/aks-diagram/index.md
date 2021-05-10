@@ -1,6 +1,6 @@
 ---
 title: Azure Kubernetes Service Diagram
-date: 2021-01-05T10:20:16+09:00
+date: 2021-04-30T10:20:16+09:00
 description: Azure Kubernetes Service diagram that I've implemented
 type: gallery
 mode: one-by-one
