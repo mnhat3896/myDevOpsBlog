@@ -5,6 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="ieHDCHfiK5kW47ukU78O5PDCLFe2xEsxgP2PhwsCr5I" />
     <title>{{ block "title" . }}{{ .Title }} – {{ .Site.Title }}{{ end }}</title>
     {{ partial "head/scripts" . }}    
     {{ partial "head/styles" . }}
@@ -12,6 +13,15 @@
     {{ partial "head/meta_json_ld" . }}
     {{ partial "head/services" . }}
     {{ partial "head/custom-head" . }}
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-N67E3Y523X"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-N67E3Y523X');
+    </script>
 </head>
 
 <body id="root" class="theme__{{ index .Site.Params.themeOptions 0 }}">
