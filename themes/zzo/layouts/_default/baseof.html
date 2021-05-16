@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="google-site-verification" content="ieHDCHfiK5kW47ukU78O5PDCLFe2xEsxgP2PhwsCr5I" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://www.googletagmanager.com/gtag 'unsafe-eval'; style-src 'self' 'unsafe-inline'; script-src 'self' https://www.googletagmanager.com 'unsafe-inline' 'unsafe-eval';  media-src *">
     <title>{{ block "title" . }}{{ .Title }} – {{ .Site.Title }}{{ end }}</title>
     {{ partial "head/scripts" . }}    
     {{ partial "head/styles" . }}
