@@ -38,17 +38,29 @@ First, Prometheus is a popular tooling, easy to config (it uses a YAML file to t
 
 ---
 
-I assume that your server has already intalled Docker. If don't you can check this guild <https://docs.docker.com/engine/install/ubuntu/>.
-To implement continuous monitoring, we need service that can scrape those metrics on the target machine, right? This server also has to send metrics that It scraped to a a place to store. Then we can use a tool that has UI and human-readable to configure and read the metric.
+I assume that your server has already intalled Docker. If don't you can check this guide <https://docs.docker.com/engine/install/ubuntu/>.
+To implement continuous monitoring, we need service that can scrape those metrics on the target machine, right? This service also has to send metrics that It scraped to a place to store. Then we can use a tool that has UI / human-readable to configure and read the metric.
 So the plan is
 
 * Run a scraper, here is I use Node-Exporter
 * Set up Prometheus server
 * Read metric via UI tool, here I use Grafana
 
+Do you see Service Discovery? `node-exporter`'s place is there.
+
+{{< img src="/images/post/server-based_monitoring_prometheus/prometheus-flow.png" title="<https://github.com/prometheus/prometheus#architecture-overview>" caption="" alt="flow" width="700px" position="center" >}}
+
 ## Node-Exporter
 
-docker run -d --name node_exporter -p 9100:9100 prom/node-exporter
+This command will open port 9100 and bind-mounted the path's root of your system to the container.
+If you need a reference you can check in the `NOTE` section above
+
+>If you start container for host monitoring, specify path.rootfs argument. This argument must match path in bind-mount of host root. The node_exporter will use path.rootfs as prefix to access host filesystem.
+
+```command
+docker run -d --name node_exporter -p 9100:9100 -v "/:/host:ro,rslave" /
+--pid="host" --path.rootfs=/host prom/node-exporter
+```
 
 ## Prometheus Step
 
@@ -57,7 +69,7 @@ docker run -d --name node_exporter -p 9100:9100 prom/node-exporter
 * Create `.yaml` file in your working directory, example at `/your-directory/monitoring/prometheus/prometheus.yml`
 * Add this setting to yaml file:
 
-  Take a look at "targets" attribute in yaml file, there are 2 IP of the node in AKS. (Change these IPs for suitable with your scenario)
+  Take a look at "targets" attribute in yaml file. This endpoint has to match with the endpoint of the node-exporter above. Here I use localhost and port 9100.
 
   ``` yaml
   # my global config
@@ -85,7 +97,7 @@ docker run -d --name node_exporter -p 9100:9100 prom/node-exporter
     - job_name: 'node-export'
       metrics_path: '/metrics'
       static_configs:
-      - targets: ['10.250.1.4:9100','10.250.1.5:9100']
+      - targets: ['localhost:9100']
   ```
 
 2.Add user 'prometheus'
@@ -96,63 +108,40 @@ docker run -d --name node_exporter -p 9100:9100 prom/node-exporter
 
 * Create folder to save prometheus's data, ex: `mkdir -p /your-directory/monitoring/prometheus/data`
 * Give permission for user 'nobody': `sudo chown nobody /your-directory/monitoring/prometheus/data`
-* Reference Dockerfile Prometheus here, if you wonder why use I 'nobody' : https://github.com/prometheus/prometheus/blob/main/Dockerfile
+* Reference Dockerfile Prometheus here, if you wonder why use I 'nobody' <https://github.com/prometheus/prometheus/blob/main/Dockerfile>
 
 5.Run Prometheus server (only server, not include scraping service)
   If you haven't created a network, run: `docker network create XXX`. (_Remember to let container prometheus and grafana in the same network_)  
 
   (*) Remove line `-v /your-directory/monitoring/prometheus/data:/prometheus/data` if you don't want to mount data to outside
   
-  ``` command
-    docker run -d -p 9090:9090 --user nobody --network bravo --name prometheus_server \
+  ```command
+    docker run -d -p 9090:9090 --user nobody --network my-network --name prometheus_server \
     -v /your-directory/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml \
     -v /your-directory/monitoring/prometheus/data:/prometheus/data prom/prometheus:v2.26.0 \
     --config.file="/etc/prometheus/prometheus.yml" --storage.tsdb.path="/prometheus/data"
   ```
 
+After you have the scraper and Prometheus server, then you need a UI to read those metric. Actually, you still can go to localhost:9090 to read and explore more. But that is not enough if you need a custom, beautiful display, alert,...etc. Here i will you Grafana for easy setup.
+
 ## Grafana Step
 
-  ``` command
-  docker run --name grafana -p 3000:3000 --network bravo -d grafana/grafana:7.5.2-ubuntu
+  ```command
+  docker run --name grafana -p 3000:3000 --network my-network -d grafana/grafana:7.5.2-ubuntu
   ```
 
-**_Secondly, install node-export in AKS_**
+## Add Prometheus to Grafana
 
-1. ## Add repo bitnami with helm
-   `helm repo add bitnami https://charts.bitnami.com/bitnami`
-2. ## Install service scraping on AKS (node-exporter)
-   _**chart node-exporter will scrape metrics related to the nodes then expose an endpoint to let Prometheus get that metrics**_  
+* Finally go to Grafana hostname you have set up above, and follow this article to add Prometheus to Grafana: <https://prometheus.io/docs/visualization/grafana/>
+* After that, you need to write a query or install an existing dashboard written by someone else
+  * You can search a dashboard, for example, I searched a dashboard that shows all information about the nodes as we install "node-exporter" above: <https://grafana.com/grafana/dashboards?search=node>
+  * Reference how to import a dashboard: <https://grafana.com/docs/grafana/latest/dashboards/export-import/>
 
-   `helm install node-exporter bitnami/node-exporter -n monitoring --version 2.2.4`  
+That's all. So Prometheus and Grafana like a couple, they usually go together (not always). 
+You need to monitor your system just need to set up a node-exporter. If you need anything else like a monitoring container or the network or whatever you want, then you just need to find the exporter suitable for your need and use it.
 
-   Check if the chart is on: `kubectl get all -n monitoring`
+A few exporters I had found
 
-_**Finally, add Grafana to nginx.conf ( If you haven't install Nginx, take a look at the Logging page )**_  
-- Add this block to nginx.conf : `sudo nano /etc/nginx/nginx.conf`  
-
-  _change server_name to a new hostname as you want_
-
-  ```
-       server {
-           server_name grafana-systemtest.bravosuite.io;
-           listen 443 ssl http2;
-           ssl_certificate     /etc/nginx/cert.pem;
-           ssl_certificate_key /etc/nginx/cert.pem;
-           location / {
-              proxy_pass http://localhost:3000;
-           }
-        }
-  ```
-- Restart Nginx: `nginx -s reload` or `sudo systemctl reload nginx`
-- Go to Cloudflare and add `grafana-systemtest.bravosuite.io` to DNS management. (_information Cloudflare, ask leader_)
-
-  ![add_dns_grafana.png](/.attachments/add_dns_grafana-610a74a2-1bc2-48fe-af6e-9d1146a5ee25.png)
-
-## Add Prometheus database to Grafana
-- Then go to Grafana hostname you have set up above, and follow this article to add Prometheus to Grafana: https://prometheus.io/docs/visualization/grafana/
-- After that, you need to write a query or install an existing dashboard written by someone else
-  - You can search a dashboard, for example, I searched a dashboard that shows all information about the nodes as we install "node-exporter" above: 
-    https://grafana.com/grafana/dashboards?search=node
-  - Reference how to import a dashboard: https://grafana.com/docs/grafana/latest/dashboards/export-import/  
-
-That's all. If you change anything else. Please go here and update it
+* Container Advisor (cAdvisor): <https://github.com/google/cadvisor>
+* Nginx exporter: <https://github.com/nginxinc/nginx-prometheus-exporter#exported-metrics>
+* A list of all exporter: <https://prometheus.io/docs/instrumenting/exporters/>
