@@ -32,9 +32,9 @@ First, Prometheus is a popular tooling, easy to config (it uses a YAML file to t
 
 ### NOTE
 
-* Node-Exporter repository: https://github.com/prometheus/node_exporter
-* Prometheus repository: https://github.com/prometheus/prometheus  
-* Grafana repository: https://github.com/grafana/grafana  
+* Node-Exporter repository: <https://github.com/prometheus/node_exporter>
+* Prometheus repository: <https://github.com/prometheus/prometheus>
+* Grafana repository: <https://github.com/grafana/grafana>
 
 ---
 
@@ -137,7 +137,7 @@ After you have the scraper and Prometheus server, then you need a UI to read tho
   * You can search a dashboard, for example, I searched a dashboard that shows all information about the nodes as we install "node-exporter" above: <https://grafana.com/grafana/dashboards?search=node>
   * Reference how to import a dashboard: <https://grafana.com/docs/grafana/latest/dashboards/export-import/>
 
-That's all. So Prometheus and Grafana like a couple, they usually go together (not always). 
+That's all. So Prometheus and Grafana like a couple, they usually go together (not always).
 You need to monitor your system just need to set up a node-exporter. If you need anything else like a monitoring container or the network or whatever you want, then you just need to find the exporter suitable for your need and use it.
 
 A few exporters I had found
