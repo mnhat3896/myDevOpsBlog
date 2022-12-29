@@ -194,7 +194,12 @@ Istio provisions keys and certificates through the following flow:
     - Istio mutual TLS has a permissive mode, which allows a service to accept both plaintext traffic and mutual TLS traffic at the same time. This feature greatly improves the mutual TLS onboarding experience(migrate that server to Istio with mutual TLS enabled.).
     - If authentication policies disable mutual TLS mode, Istio continues to use plain text between PEPs.
     - [Peer policy](https://istio.io/latest/docs/concepts/security/#peer-authentication)
-
+    - modes are supported:
+      * PERMISSIVE: Workloads accept both mutual TLS and plain text traffic. This mode is most useful during migrations when workloads without sidecar cannot use mutual TLS. Once workloads are migrated with sidecar injection, you should switch the mode to STRICT.
+      * STRICT: Workloads only accept mutual TLS traffic.
+      * DISABLE: Mutual TLS is disabled. From a security perspective, you shouldn’t use this mode unless you provide your own security solution.
+      ---
+      When the mode is unset, the mode of the parent scope is inherited. Mesh-wide peer authentication policies with an unset mode use the PERMISSIVE mode by default.
   - Request authentication: Used for end-user authentication to verify the credential attached to the request
 
 - When a workload sends a request to another workload using mutual TLS authentication, the request is handled as follows `(Mutual TLS authentication)`:
