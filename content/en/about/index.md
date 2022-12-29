@@ -10,11 +10,6 @@ This is my blog, I do this website just want to make this website like a note to
 
 ------
 
-
-{{< alert theme="success" dir="ltr" >}}
-Ancient people have a sentence: “nhân định thắng thiên” mean human determination will overcome destiny
-{{< /alert >}}
-
 You can contact me via
 
 * telegram: https://t.me/nhatle308
