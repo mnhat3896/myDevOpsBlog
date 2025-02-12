@@ -23,7 +23,6 @@ series:
 - Azure cloud
 image: images/post/backup_DB_inside_AKS_with_Az_backup/Azure-Backup.png
 ---
-
 {{< alert theme="warning" dir="ltr" >}}
 First, thank you for visiting my blog and read my article, I appreciate it. Secondly, this is also a place to keep my idea, my knowledge. At the same time, I also want to share these understandings, in a way it can help you or you can have another perspective on your problem.
 
